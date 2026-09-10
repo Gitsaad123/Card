@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saad Sanaan Hayyu</title>
+<meta name="description" content="Kontaktdaten und Lebenslauf von Saad Sanaan Hayyu, Bremen.">
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --tinte:#16283C;
+    --papier:#F7F6F3;
+    --akzent:#B0552F;
+    --grau:#5A6672;
+    --linie:#DDE0E4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--papier);
+    color:var(--tinte);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    line-height:1.45;
+    min-height:100vh;
+  }
+  .huelle{max-width:30rem;margin:0 auto;background:var(--papier);min-height:100vh}
+
+  /* ---- Kopf ---- */
+  .kopf{
+    background:var(--tinte);
+    color:#fff;
+    padding:2.4rem 1.5rem 2rem;
+    display:flex;
+    align-items:center;
+    gap:1.1rem;
+  }
+  .kopf img{
+    width:5rem;height:5rem;
+    border-radius:50%;
+    object-fit:cover;
+    object-position:center 22%;
+    border:2px solid var(--akzent);
+    flex:0 0 auto;
+  }
+  .name{
+    font-size:1.65rem;
+    font-weight:400;
+    letter-spacing:-.015em;
+    line-height:1.15;
+  }
+  .name b{font-weight:700}
+  .rolle{
+    margin-top:.35rem;
+    font-size:.86rem;
+    color:rgba(255,255,255,.72);
+  }
+
+  /* ---- Aktionen ---- */
+  .aktionen{padding:1.5rem 1.5rem .5rem}
+  .knopf{
+    display:block;
+    width:100%;
+    padding:1.05rem 1.2rem;
+    margin-bottom:.7rem;
+    font-size:1.02rem;
+    font-weight:700;
+    text-decoration:none;
+    text-align:left;
+    border:1.5px solid var(--tinte);
+    color:var(--tinte);
+    background:transparent;
+  }
+  .knopf.voll{background:var(--tinte);color:#fff;border-color:var(--tinte)}
+  .knopf span{
+    display:block;
+    font-size:.8rem;
+    font-weight:400;
+    margin-top:.15rem;
+    color:var(--grau);
+  }
+  .knopf.voll span{color:rgba(255,255,255,.68)}
+  .knopf:focus-visible{outline:3px solid var(--akzent);outline-offset:2px}
+
+  /* ---- Direktkontakt ---- */
+  .direkt{padding:.9rem 1.5rem 2.5rem}
+  .zeile{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:1rem;
+    padding:.85rem 0;
+    border-top:1px solid var(--linie);
+    font-size:.94rem;
+  }
+  .zeile:last-of-type{border-bottom:1px solid var(--linie)}
+  .zeile dt{color:var(--grau);font-size:.82rem}
+  .zeile dd a{color:var(--tinte);text-decoration:none;border-bottom:1.5px solid var(--akzent);padding-bottom:1px}
+  .fuss{
+    margin-top:1.6rem;
+    font-size:.82rem;
+    color:var(--grau);
+  }
+</style>
+</head>
+<body>
+<main class="huelle">
+
+  <header class="kopf">
+    <img src="foto.jpg" alt="Porträt von Saad Sanaan Hayyu">
+    <div>
+      <h1 class="name">Saad Sanaan <b>Hayyu</b></h1>
+      <p class="rolle">Student der Sozialen Arbeit, Bremen</p>
+    </div>
+  </header>
+
+  <nav class="aktionen">
+    <a class="knopf voll" href="saad-hayyu.vcf" download>
+      Kontakt speichern
+      <span>Legt Name, Nummer und E-Mail im Adressbuch an</span>
+    </a>
+    <a class="knopf" href="lebenslauf-saad-hayyu.pdf">
+      Lebenslauf ansehen
+      <span>Eine Seite, PDF</span>
+    </a>
+  </nav>
+
+  <section class="direkt">
+    <dl>
+      <div class="zeile">
+        <dt>Telefon</dt>
+        <dd><a href="tel:+4915214294451">+49 152 14294451</a></dd>
+      </div>
+      <div class="zeile">
+        <dt>E-Mail</dt>
+        <dd><a href="mailto:saadhyderabad200@gmail.com">saadhyderabad200@gmail.com</a></dd>
+      </div>
+      <div class="zeile">
+        <dt>Ort</dt>
+        <dd>Bremen</dd>
+      </div>
+    </dl>
+    <p class="fuss">Verfügbar bis 20 Stunden pro Woche, auch abends und am Wochenende.</p>
+  </section>
+
+</main>
+</body>
+</html>
