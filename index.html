@@ -102,6 +102,24 @@
     font-size:.82rem;
     color:var(--grau);
   }
+  /* ---- Spiel ---- */
+  .spielknopf{
+    position:fixed;right:1.1rem;bottom:1.1rem;z-index:10;
+    width:3.4rem;height:3.4rem;border-radius:50%;
+    background:var(--akzent);color:#fff;border:0;cursor:pointer;
+    box-shadow:0 4px 14px rgba(22,40,60,.3);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .spielknopf:focus-visible{outline:3px solid var(--tinte);outline-offset:3px}
+  .spielknopf svg{width:1.6rem;height:1.6rem}
+  .spielfenster{position:fixed;inset:0;z-index:20;background:var(--tinte);display:none}
+  .spielfenster.offen{display:block}
+  .spielfenster iframe{width:100%;height:100%;border:0;display:block}
+  .schliessen{
+    position:absolute;top:.9rem;right:1rem;z-index:2;
+    width:2.6rem;height:2.6rem;border-radius:50%;border:0;cursor:pointer;
+    background:rgba(255,255,255,.14);color:#fff;font-size:1.4rem;line-height:1;
+  }
 </style>
 </head>
 <body>
@@ -152,5 +170,23 @@
   </section>
 
 </main>
+<button class="spielknopf" id="spielAuf" aria-label="Kleines Spiel öffnen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="15" width="14" height="4"/><rect x="7" y="10" width="11" height="4"/><rect x="8" y="5" width="8" height="4"/></svg>
+</button>
+<div class="spielfenster" id="spiel" role="dialog" aria-label="Stapeln">
+  <button class="schliessen" id="spielZu" aria-label="Spiel schließen">&times;</button>
+</div>
+<script>
+(function(){
+  var f=document.getElementById('spiel');
+  document.getElementById('spielAuf').onclick=function(){
+    if(!f.querySelector('iframe')){var i=document.createElement('iframe');i.src='spiel.html';i.title='Stapeln';f.appendChild(i)}
+    f.classList.add('offen');document.body.style.overflow='hidden';
+    setTimeout(function(){var i=f.querySelector('iframe');i&&i.focus()},50);
+  };
+  document.getElementById('spielZu').onclick=function(){f.classList.remove('offen');document.body.style.overflow=''};
+  addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('spielZu').click()});
+})();
+</script>
 </body>
 </html>
