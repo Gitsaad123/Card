@@ -49,6 +49,11 @@
   .shopliste button{padding:.55rem .8rem;font-weight:700;border:0;background:var(--akzent);color:#fff;cursor:pointer;white-space:nowrap;font-size:.85rem}
   .shopliste button:disabled{background:#c9ced3;cursor:default}
   .shopliste button.an{background:var(--tinte)}
+  .tipp{position:fixed;left:.8rem;right:.8rem;bottom:.8rem;margin:0 auto;max-width:24rem;background:rgba(247,246,243,.96);color:var(--tinte);padding:.8rem 1rem;font-size:.98rem;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;display:none;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:6}
+  .tipp.an{display:block;animation:rein .35s ease-out}
+  .tipp small{display:block;margin-top:.3rem;font-size:.75rem;font-weight:400;color:var(--grau)}
+  @keyframes rein{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+  .skip{position:fixed;top:.95rem;right:7rem;height:2.5rem;padding:0 .9rem;border-radius:1.25rem;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;z-index:6;display:none}
   .farbe{width:1.6rem;height:1.6rem;border-radius:50%;flex:0 0 auto;border:1px solid rgba(0,0,0,.15)}
 </style>
 </head>
@@ -57,13 +62,16 @@
 <div class="hud"><div class="meter" id="m">0<small>m</small></div><div class="klein" id="k"></div><div class="effekte" id="e"></div></div>
 <button class="tonknopf" id="tonBtn" aria-label="Ton an oder aus">🔊</button>
 <div class="toast" id="t"></div>
+<div class="tipp" id="tipp"><span id="tippText"></span><small id="tippSchritt"></small></div>
+<button class="skip" id="skipBtn">Überspringen</button>
 
 <div class="tafel" id="start">
   <div class="karte">
     <h1>Bremen Jetpack</h1>
     <p>Mit dem Jetpack über Bremen: Roland, Stadtmusikanten, Hochschule, Little Mary's und mehr.</p>
-    <div class="hilfe"><b>Halten</b> = hochfliegen, <b>loslassen</b> = sinken<br>📦 Kiste: Straßenbahn, Motorrad oder Fähre<br>🐟 Fischbrötchen: ein Treffer frei<br>🍬 Kluten: zieht Schlüssel an<br>🧣 Schal: Turbo, unverwundbar</div>
+    <div class="hilfe"><b>Halten</b> = hochfliegen, <b>loslassen</b> = sinken<br>📦 Kiste: Straßenbahn, Rennrad, Motorrad oder Fähre<br>🐟 Fischbrötchen: ein Treffer frei<br>🍬 Kluten: zieht Schlüssel an<br>🧣 Schal: Turbo, unverwundbar</div>
     <button class="los" id="losBtn">Abheben</button>
+    <button class="zweit" id="demoBtn">So geht's: kurze Demo</button>
     <button class="zweit" id="shopBtn1">Shop</button>
     <h2>Heutige Missionen</h2>
     <ul class="missionen" id="mis1"></ul>
@@ -89,6 +97,15 @@
     <h2>Bestenliste</h2>
     <ol class="liste" id="liste2"></ol>
     <p class="leise" id="info2"></p>
+  </div>
+</div>
+
+<div class="tafel weg" id="tutFertig">
+  <div class="karte">
+    <h1>Du hast's drauf! 🎉</h1>
+    <p>Jetzt die echte Runde. Die zählt für Missionen, Schlüssel und die Bestenliste.</p>
+    <button class="los" id="tutLos">Jetzt spielen</button>
+    <button class="zweit" id="tutZurueck">Zurück zum Start</button>
   </div>
 </div>
 
@@ -177,6 +194,7 @@ var DB = { url: '', key: '' };
   missionenPruefen();
   function missionText(m){for(var i=0;i<POOL.length;i++)if(POOL[i].art===m.art)return POOL[i].text(m.ziel);return ''}
   function missionMelden(art,wert,max){
+    if(st&&st.tutorial)return;
     var geaendert=false,neu=false;
     mis.liste.forEach(function(m){
       if(m.art!==art||m.fertig)return;
@@ -481,6 +499,7 @@ var DB = { url: '', key: '' };
     if(st.turbo>0||st.unverwundbar>0){if(st.turbo>0){st.hind.splice(i,1);funken(h.x,h.y||BODEN-20*S,10)}return false}
     if(st.fahrzeug&&st.fahrzeug.typ==='xsr'&&h.typ==='boden'){st.hind.splice(i,1);sfx('kaputt');
       for(var tb=0;tb<12;tb++)st.teile.push({x:h.x+h.w/2,y:BODEN-h.h,vx:(1+Math.random()*5)*S,vy:-(2+Math.random()*5)*S,leben:40,max:40,art:'truemmer',farbe:tb%2?'#fff':'#d32f2f'});return false}
+    if(st.tutorial){st.hind.splice(i,1);st.unverwundbar=60;sfx('schild');toast('Autsch! Kein Problem, ist nur die Übung.');return false}
     if(st.fahrzeug){st.hind.splice(i,1);aussteigen(true);return false}
     if(st.schild){st.schild=false;st.unverwundbar=90;st.hind.splice(i,1);sfx('schild');toast('Fischbrötchen hat dich gerettet!');
       for(var k=0;k<12;k++)st.teile.push({x:PX(),y:st.py-40*S,vx:(Math.random()-.5)*7*S,vy:(Math.random()-.8)*6*S,leben:30,max:30,art:'kruemel'});return false}
@@ -562,20 +581,21 @@ var DB = { url: '', key: '' };
     st.zeit++;
     if(st.lauf){
       var tempo=st.v*(st.turbo>0?2.2:st.fahrzeug?FZ[st.fahrzeug.typ].tempo:1),v=tempo*S;
-      st.dist+=tempo/12;st.v=Math.min(6,3+st.dist/800);
+      st.dist+=tempo/12;if(!st.tutorial)st.v=Math.min(6,3+st.dist/800);
       if(st.fahrzeug)fahrzeugPhysik();else jetPhysik();
       if(st.turbo>0){st.turbo--;st.py+=((BODEN+DECKE)/2+30*S-st.py)*.08;st.vy=0;
         if(st.zeit%2===0)st.teile.push({x:PX()-20*S,y:st.py-40*S+(Math.random()-.5)*30*S,vx:-6*S,vy:0,leben:14,max:14,art:'strich'});
         if(st.turbo===0)st.unverwundbar=60}
       if(st.unverwundbar>0)st.unverwundbar--;
       if(st.magnet>0)st.magnet--;
-      wetterLogik();
+      if(!st.tutorial)wetterLogik();
       st.naechst-=v;if(st.naechst<=0)muster();
       st.naechstItem-=v;if(st.naechstItem<=0)neuesItem();
       var ziel=ORTE[st.ortIdx];
       if(st.dist>=ziel.m+st.runde*RUNDE){st.orte.push({o:ziel,x:W+200*S});toast(ziel.name);missionMelden('ort:'+ziel.typ,1);st.ortIdx++;
         if(st.ortIdx>=ORTE.length){st.ortIdx=0;st.runde++;toast('Einmal quer durch Bremen!')}}
       if(st.zeit%60===0)missionMelden('meter1',Math.floor(st.dist),true);
+      if(st.tutorial)tutLogik();
       var hb=hitbox(),mitte=(hb.t+hb.b)/2;
       for(var i=st.hind.length-1;i>=0;i--){var h=st.hind[i];
         if(h.typ==='brief'){
@@ -594,7 +614,7 @@ var DB = { url: '', key: '' };
       for(var j=st.keysArr.length-1;j>=0;j--){var o=st.keysArr[j];o.x-=v;
         if(st.magnet>0){var dx=PX()-o.x,dy=mitte-o.y,dd=Math.sqrt(dx*dx+dy*dy);if(dd<170*S){o.x+=dx/dd*7*S;o.y+=dy/dd*7*S}}
         if(o.x<-30){st.keysArr.splice(j,1);continue}
-        if(ueber(hb,o.x-10*S,o.x+10*S,o.y-10*S,o.y+10*S)){st.keysArr.splice(j,1);var plus=st.fahrzeug&&st.fahrzeug.typ==='rennrad'?2:1;st.keys+=plus;konto.keys+=plus;missionMelden('keys',plus);sfx('key');
+        if(ueber(hb,o.x-10*S,o.x+10*S,o.y-10*S,o.y+10*S)){st.keysArr.splice(j,1);var plus=st.fahrzeug&&st.fahrzeug.typ==='rennrad'?2:1;st.keys+=plus;if(!st.tutorial)konto.keys+=plus;missionMelden('keys',plus);sfx('key');
           for(var sp=0;sp<5;sp++)st.teile.push({x:o.x,y:o.y,vx:(Math.random()-.5)*5*S,vy:(Math.random()-.8)*5*S,leben:18,max:18,art:'funke'})}}
       for(var n=st.items.length-1;n>=0;n--){var it=st.items[n];it.x-=v;
         if(it.x<-40){st.items.splice(n,1);continue}
@@ -893,9 +913,57 @@ var DB = { url: '', key: '' };
     fetch(DB.url+'/rest/v1/scores',{method:'POST',headers:{apikey:DB.key,Authorization:'Bearer '+DB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(ich)})
       .then(function(){laden('liste2','info2',ich)}).catch(function(){laden('liste2','info2',ich)});
   });
+  /* ---------- Demo: So geht's ---------- */
+  function mitteY(){var hb=hitbox();return Math.max(DECKE+60*S,Math.min(BODEN-60*S,(hb.t+hb.b)/2))}
+  var TUT=[
+    {text:'👆 Halte den Finger auf dem Bildschirm gedrückt, um zu fliegen',fertig:function(t){return t.halt>45}},
+    {text:'Jetzt loslassen, dann sinkst du langsam',start:function(t){t.los=0},fertig:function(t){if(!st.schub)t.los++;return t.los>40}},
+    {text:'Sammle die Bremer Schlüssel 🔑 Flieg einfach durch',start:function(){var y=mitteY();for(var i=0;i<6;i++)st.keysArr.push({x:W+30+i*30*S,y:y})},
+      fertig:function(t){return t.zeit>30&&!st.keysArr.length}},
+    {text:'Straßenbahn-Leitung! Flieg drüber oder drunter durch',start:function(){st.hind.push({typ:'leitung',x:W+80*S,y:(DECKE+BODEN)/2,len:150*S,w:0,dreh:false})},
+      fertig:function(t){return t.zeit>30&&!st.hind.length}},
+    {text:'Ein Jobcenter-Brief! Das ! zeigt dir, auf welcher Höhe er kommt. Ausweichen!',start:function(){st.hind.push({typ:'brief',x:W+30,y:mitteY(),warn:150})},
+      fertig:function(t){return t.zeit>30&&!st.hind.length}},
+    {text:'Schnapp dir die Kiste 📦 Da steckt ein Fahrzeug drin',start:function(){st.items.push({typ:'kiste',x:W+30,y:mitteY()})},
+      fertig:function(t){if(!st.fahrzeug&&!st.items.length&&t.zeit>30)st.items.push({typ:'kiste',x:W+30,y:mitteY()});return !!st.fahrzeug}},
+    {text:'Im Fahrzeug fährst du auf der Straße. Tippen = springen. Spring über das Hindernis!',start:function(t){t.gesetzt=false},
+      fertig:function(t){if(!t.gesetzt&&t.zeit>80&&st.py>=BODEN-1){st.hind.push({typ:'boden',x:W+20,w:34*S,h:24*S,wasser:!!st.fahrzeug&&st.fahrzeug.typ==='faehre'});t.gesetzt=true}
+        return t.gesetzt&&!st.hind.length}},
+    {text:'🐟 Fischbrötchen = ein Treffer frei · 🍬 Kluten = Schlüssel-Magnet · 🧣 Schal = Turbo. Hol sie dir!',
+      start:function(){if(st.fahrzeug)aussteigen(false);var y=(DECKE+BODEN)/2;['fisch','kluten','schal'].forEach(function(typ,i){st.items.push({typ:typ,x:W+90*S+i*150*S,y:y})})},
+      fertig:function(t){return t.zeit>60&&!st.items.length&&st.turbo<=0}},
+    {start:function(){tutorialEnde()}}
+  ];
+  function tippZeigen(){
+    var t=st.tutorial,sch=TUT[t.i];if(!sch.text)return;
+    var el=$('tipp');el.classList.remove('an');void el.offsetWidth;
+    $('tippText').textContent=sch.text;$('tippSchritt').textContent='Schritt '+(t.i+1)+' von '+(TUT.length-1);el.classList.add('an');
+  }
+  function tutLogik(){
+    var t=st.tutorial,sch=TUT[t.i];
+    if(!t.gestartet){t.gestartet=true;t.zeit=0;if(sch.start)sch.start(t);if(!st.tutorial)return;tippZeigen()}
+    t.zeit++;if(st.schub)t.halt++;
+    if(sch.fertig&&sch.fertig(t)){t.i++;t.gestartet=false;if(t.i<TUT.length-1)sfx('key')}
+  }
+  function tutorialEnde(){
+    st.lauf=false;st.tutorial=null;st.schub=false;
+    $('tipp').classList.remove('an');$('skipBtn').style.display='none';
+    sfx('mission');$('tutFertig').classList.remove('weg');
+  }
+  function demoStarten(){
+    starten();
+    st.tutorial={i:0,zeit:0,halt:0,gestartet:false};st.naechst=1e12;st.naechstItem=1e12;st.ersteKiste=false;
+    $('skipBtn').style.display='block';
+  }
+  $('demoBtn').onclick=demoStarten;
+  $('skipBtn').onclick=function(e){e.stopPropagation();starten()};
+  $('skipBtn').addEventListener('pointerdown',function(e){e.stopPropagation()});
+  $('tutLos').onclick=function(){starten()};
+  $('tutZurueck').onclick=function(){$('tutFertig').classList.add('weg');zuruecksetzen();missionenZeigen('mis1');shopKnopf();laden('liste1','info1');$('start').classList.remove('weg')};
   function starten(){
     audioStart();zuruecksetzen();st.lauf=true;mPos=0;mPhrase=0;mNext=0;toasts=[];toastZeit=0;$('t').style.opacity=0;
-    $('start').classList.add('weg');$('ende').classList.add('weg');
+    $('start').classList.add('weg');$('ende').classList.add('weg');$('tutFertig').classList.add('weg');
+    $('tipp').classList.remove('an');$('skipBtn').style.display='none';
   }
   $('losBtn').onclick=starten;$('nochmal').onclick=starten;
 
