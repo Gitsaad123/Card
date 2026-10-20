@@ -90,13 +90,13 @@ var DB = { url: '', key: '' };
 
   var st;
   function zuruecksetzen(){
-    st={lauf:false,dist:0,v:4,keys:0,py:0,vy:0,schub:false,
+    st={lauf:false,dist:0,v:3,keys:0,py:0,vy:0,schub:false,
       hind:[],keysArr:[],teile:[],acc:0,tilt:0,squash:0,sterben:null,naechst:420,ortIdx:0,runde:0,orte:[],wolken:[],zeit:0,beine:0};
     st.py=BODEN||500;
     for(var i=0;i<6;i++)st.wolken.push({x:Math.random()*(W||400),y:(H||800)*(.06+Math.random()*.3),s:.6+Math.random()*.9});
   }
   function groesse(){dpr=window.devicePixelRatio||1;W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);
-    BODEN=H*.86;DECKE=H*.1;S=Math.min(W/340,H/640,1.6)}
+    BODEN=H*.86;DECKE=H*.1;S=Math.min(W/340,H/640,1.6)*.7}
 
   /* Eingabe: halten = Schub */
   function an(e){if(e&&e.target===c)e.preventDefault();if(st.lauf)st.schub=true}
@@ -190,7 +190,7 @@ var DB = { url: '', key: '' };
   function muster(){
     var r=Math.random(),t=st.dist;
     if(t>120&&r<.22){ // Jobcenter-Brief als Rakete: erst Warnung, dann Flug
-      st.hind.push({typ:'brief',x:W+30,y:st.py,warn:95,v:0});
+      st.hind.push({typ:'brief',x:W+30,y:st.py,warn:125,v:0});
       st.naechst=260*S;return;
     }
     if(r<.38&&t>40){ // Möwen-Schwarm
@@ -247,7 +247,7 @@ var DB = { url: '', key: '' };
 
   /* ---------- Spielfigur mit Jetpack ---------- */
   function figur(){
-    var X=W*.25,Y=st.py,s=S,amBoden=Y>=BODEN-1;
+    var X=W*.15,Y=st.py,s=S,amBoden=Y>=BODEN-1;
     x.save();x.translate(X,Y);
     if(st.sterben){x.translate(0,-36*s);x.rotate(st.sterben.rot);x.translate(0,36*s)}
     else{x.translate(0,-30*s);x.rotate(st.tilt);x.translate(0,30*s);x.scale(1+st.squash*.25,1-st.squash*.25)}
@@ -271,11 +271,11 @@ var DB = { url: '', key: '' };
   /* ---------- Schleife ---------- */
   var toastZeit=0;
   function toast(t){var e=$('t');e.textContent=t;e.style.opacity=1;toastZeit=130}
-  function staub(kraft){for(var d=0;d<8;d++)st.teile.push({x:W*.25+(Math.random()-.5)*20*S,y:BODEN-2*S,vx:(Math.random()-.5)*kraft*.5,vy:-Math.random()*kraft*.35,leben:24,max:24,art:'staub'})}
+  function staub(kraft){for(var d=0;d<8;d++)st.teile.push({x:W*.15+(Math.random()-.5)*20*S,y:BODEN-2*S,vx:(Math.random()-.5)*kraft*.5,vy:-Math.random()*kraft*.35,leben:24,max:24,art:'staub'})}
   function absturz(h){
     st.lauf=false;st.schub=false;
     st.sterben={h:h,vy:Math.min(st.vy,0)-6*S,rot:0,rotv:.28,zeit:0,ruhe:0};
-    for(var b=0;b<18;b++)st.teile.push({x:W*.25,y:st.py-40*S,vx:(Math.random()-.5)*8*S,vy:(Math.random()-.7)*8*S,leben:30,max:30,art:h.typ==='leitung'?'funke':h.typ==='moewe'?'feder':'funke'});
+    for(var b=0;b<18;b++)st.teile.push({x:W*.15,y:st.py-40*S,vx:(Math.random()-.5)*8*S,vy:(Math.random()-.7)*8*S,leben:30,max:30,art:h.typ==='leitung'?'funke':h.typ==='moewe'?'feder':'funke'});
     if(navigator.vibrate)try{navigator.vibrate(120)}catch(e){}
   }
   function sterbePhysik(){
@@ -292,26 +292,26 @@ var DB = { url: '', key: '' };
     if(d.ruhe>25||d.zeit>240){var h=d.h;st.sterben=null;ende(h)}
   }
   function punkte(){return Math.floor(st.dist)+st.keys*10}
-  function schritt(){
+  function logik(){
     st.zeit++;
     var v=st.lauf?st.v*S:0;
     if(st.lauf){
-      st.dist+=st.v/12;st.v=Math.min(8.5,4+st.dist/500);
+      st.dist+=st.v/12;st.v=Math.min(6,3+st.dist/800);
       var zielAcc=st.schub?-.68:.52;st.acc+=(zielAcc-st.acc)*.18;          // Schub baut sich auf
       st.vy+=st.acc*S;st.vy*=.988;st.vy=Math.max(-8.5*S,Math.min(10*S,st.vy));st.py+=st.vy;
       if(st.py>BODEN){if(st.vy>4.5*S){st.squash=Math.min(1,st.vy/(10*S));staub(st.vy);st.vy=-st.vy*.28}else st.vy=0;st.py=BODEN}
       if(st.py<DECKE+70*S){st.py=DECKE+70*S;st.vy=Math.abs(st.vy)*.35}
-      if(st.schub)for(var fz=0;fz<2;fz++)st.teile.push({x:W*.25-14*S+(Math.random()-.5)*5*S,y:st.py-28*S,vx:-(1+Math.random())*S,vy:(2.5+Math.random()*2)*S,leben:22+Math.random()*12,max:34,art:'flamme'});
+      if(st.schub)for(var fz=0;fz<2;fz++)st.teile.push({x:W*.15-14*S+(Math.random()-.5)*5*S,y:st.py-28*S,vx:-(1+Math.random())*S,vy:(2.5+Math.random()*2)*S,leben:22+Math.random()*12,max:34,art:'flamme'});
       if(st.py>=BODEN-1)st.beine+=st.v*.09;
       st.naechst-=v;if(st.naechst<=0)muster();
       var ziel=ORTE[st.ortIdx];
       if(st.dist>=ziel.m+st.runde*RUNDE){st.orte.push({o:ziel,x:W+200*S});toast(ziel.name);st.ortIdx++;
         if(st.ortIdx>=ORTE.length){st.ortIdx=0;st.runde++;toast('Einmal quer durch Bremen! Weiter so...')}}
-      var px=W*.25,pyM=st.py-40*S,r=16*S;
+      var px=W*.15,pyM=st.py-40*S,r=16*S;
       for(var i=st.hind.length-1;i>=0;i--){var h=st.hind[i];
         if(h.typ==='brief'){
-          if(h.warn>0){h.warn--;if(h.warn>35)h.y+=(pyM-h.y)*.08;if(h.warn===0){h.x=W+20}}
-          else{h.x-=v+7*S}
+          if(h.warn>0){h.warn--;if(h.warn>45)h.y+=(pyM-h.y)*.08;if(h.warn===0){h.x=W+20}}
+          else{h.x-=v+4.5*S}
         }else h.x-=v;
         if((h.typ==='leitung'&&h.x<-h.len)||(h.typ!=='leitung'&&h.x<-80)){st.hind.splice(i,1);continue}
         var tot=false;
@@ -337,6 +337,12 @@ var DB = { url: '', key: '' };
     st.tilt+=((st.lauf?Math.max(-.35,Math.min(.35,st.vy/S*.045)):st.tilt)-st.tilt)*.18;
     st.squash*=.85;
     if(toastZeit>0&&--toastZeit===0)$('t').style.opacity=0;
+  }
+  var letzteZeit=0,rest=0,SCHRITT=1000/60;
+  function schritt(t){
+    if(!letzteZeit)letzteZeit=t;
+    rest+=Math.min(100,t-letzteZeit);letzteZeit=t;
+    while(rest>=SCHRITT){logik();rest-=SCHRITT}
     zeichnen();
     requestAnimationFrame(schritt);
   }
