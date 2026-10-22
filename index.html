@@ -106,11 +106,15 @@
   .tresor{padding:0 1.5rem 7rem}
   .schloss{background:none;border:0;padding:.4rem 0;font:inherit;font-size:.85rem;color:var(--grau);cursor:pointer}
   .pw{display:flex;gap:.5rem;margin-top:.4rem}
-  .pw[hidden],#offen[hidden],.pwhinweis[hidden]{display:none}
+  .pw[hidden],.offen[hidden],.pwhinweis[hidden],.schloss[hidden]{display:none}
+  .schlossbox{border-top:1px solid var(--linie);padding:.35rem 0}
+  .schlossbox:first-child{border-top:0}
+  .schlossbox:last-child{border-bottom:1px solid var(--linie)}
   .pw input{flex:1;min-width:0;padding:.8rem;font-size:1rem;border:1.5px solid var(--tinte);background:#fff;color:var(--tinte);font-family:inherit}
   .pw button{padding:.8rem 1rem;font-weight:700;border:0;background:var(--tinte);color:#fff;font-family:inherit;font-size:.95rem;cursor:pointer}
   .pwhinweis{margin-top:.5rem;font-size:.85rem;color:var(--akzent)}
-  #offen{margin-top:.6rem}
+  .offen{margin-top:.6rem;padding-bottom:.4rem}
+  .schloss{display:block;width:100%;text-align:left}
   .sperren{margin-top:1rem;background:none;border:0;padding:.3rem 0;font:inherit;font-size:.82rem;color:var(--grau);text-decoration:underline;cursor:pointer}
 
   /* ---- Spiel ---- */
@@ -170,16 +174,23 @@
   </section>
 
   <section class="tresor" id="tresor">
-    <button class="schloss" id="schlossBtn" type="button" aria-expanded="false">🔒 Mehr</button>
-    <form class="pw" id="pwForm" hidden>
-      <input id="pw" type="password" placeholder="Passwort" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Passwort">
-      <button type="submit" id="pwBtn">Öffnen</button>
-    </form>
-    <p class="pwhinweis" id="pwHinweis" hidden></p>
-    <div id="offen" hidden>
-      <div id="dokus"></div>
-      <p class="fuss" id="notiz"></p>
-      <button class="sperren" id="sperrBtn" type="button">Wieder sperren</button>
+    <div class="schlossbox" data-id="a">
+      <button class="schloss" type="button">🔒 Lebenslauf</button>
+      <form class="pw" hidden>
+        <input type="password" placeholder="Passwort" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Passwort für Lebenslauf">
+        <button type="submit">Öffnen</button>
+      </form>
+      <p class="pwhinweis" hidden></p>
+      <div class="offen" hidden><div class="dokus"></div><p class="fuss notiz"></p><button class="sperren" type="button">Wieder sperren</button></div>
+    </div>
+    <div class="schlossbox" data-id="b">
+      <button class="schloss" type="button">🔒 Lebenslauf + Persönlichkeitsprofil</button>
+      <form class="pw" hidden>
+        <input type="password" placeholder="Passwort" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Passwort für Lebenslauf und Persönlichkeitsprofil">
+        <button type="submit">Öffnen</button>
+      </form>
+      <p class="pwhinweis" hidden></p>
+      <div class="offen" hidden><div class="dokus"></div><p class="fuss notiz"></p><button class="sperren" type="button">Wieder sperren</button></div>
     </div>
   </section>
 
@@ -205,57 +216,59 @@
 </script>
 <script>
 (function(){
-  var SALZ='LX/CUL1WvrW+UlowqCE8sQ==',RUNDEN=310000,SPEICHER='tresor-v1',TAGE=5;
-  var $=function(i){return document.getElementById(i)},blobs=[];
-  if(!window.crypto||!crypto.subtle){$('tresor').hidden=true;return}
+  var SALZE={a:'BJm7GoJd6WttfAAez+VqTw==',b:'TFg2ZiAWoT61jQMv/bDLFg=='},RUNDEN=310000,TAGE=5;
+  if(!window.crypto||!crypto.subtle){document.getElementById('tresor').hidden=true;return}
   function b64d(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
   function b64e(u){u=new Uint8Array(u);var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s)}
-  function ausPasswort(pw){
-    return crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']).then(function(basis){
-      return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(SALZ),iterations:RUNDEN,hash:'SHA-256'},basis,{name:'AES-GCM',length:256},true,['decrypt'])})
-  }
   function entschluesseln(key,url){
     return fetch(url,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('fehlt');return r.arrayBuffer()}).then(function(b){
       b=new Uint8Array(b);return crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},key,b.slice(12))})
   }
-  function oeffnen(key){
-    return entschluesseln(key,'tresor/inhalt.enc').then(function(roh){
-      var inh=JSON.parse(new TextDecoder().decode(roh));
-      return Promise.all(inh.dokumente.map(function(d){return entschluesseln(key,'tresor/'+d.datei).then(function(pdf){return{d:d,pdf:pdf}})})).then(function(liste){
-        var box=$('dokus');box.innerHTML='';
-        liste.forEach(function(e){
-          var url=URL.createObjectURL(new Blob([e.pdf],{type:'application/pdf'}));blobs.push(url);
-          var a=document.createElement('a');a.className='knopf';a.href=url;a.target='_blank';a.rel='noopener';
-          a.textContent=e.d.titel;var sp=document.createElement('span');sp.textContent=e.d.info||'';a.appendChild(sp);box.appendChild(a);
+  document.querySelectorAll('.schlossbox').forEach(function(box){
+    var id=box.dataset.id,ordner='tresor/'+id+'/',speicher='tresor-'+id,blobs=[];
+    var q=function(sel){return box.querySelector(sel)},knopf=q('.schloss'),form=q('.pw'),feld=q('input'),los=q('.pw button'),hinweis=q('.pwhinweis'),offen=q('.offen');
+    function ausPasswort(pw){
+      return crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']).then(function(basis){
+        return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(SALZE[id]),iterations:RUNDEN,hash:'SHA-256'},basis,{name:'AES-GCM',length:256},true,['decrypt'])})
+    }
+    function oeffnen(key){
+      return entschluesseln(key,ordner+'inhalt.enc').then(function(roh){
+        var inh=JSON.parse(new TextDecoder().decode(roh));
+        return Promise.all(inh.dokumente.map(function(d){return entschluesseln(key,ordner+d.datei).then(function(pdf){return{d:d,pdf:pdf}})})).then(function(liste){
+          var ziel=q('.dokus');ziel.innerHTML='';
+          liste.forEach(function(e){
+            var url=URL.createObjectURL(new Blob([e.pdf],{type:'application/pdf'}));blobs.push(url);
+            var a=document.createElement('a');a.className='knopf';a.href=url;a.target='_blank';a.rel='noopener';
+            a.textContent=e.d.titel;var sp=document.createElement('span');sp.textContent=e.d.info||'';a.appendChild(sp);ziel.appendChild(a);
+          });
+          q('.notiz').textContent=inh.notiz||'';
+          form.hidden=true;hinweis.hidden=true;knopf.hidden=true;offen.hidden=false;
         });
-        $('notiz').textContent=inh.notiz||'';
-        $('pwForm').hidden=true;$('pwHinweis').hidden=true;$('schlossBtn').hidden=true;$('offen').hidden=false;
       });
+    }
+    function merken(key){return crypto.subtle.exportKey('raw',key).then(function(raw){
+      try{localStorage.setItem(speicher,JSON.stringify({k:b64e(raw),bis:Date.now()+TAGE*864e5}))}catch(e){}})}
+    function sperren(){
+      try{localStorage.removeItem(speicher)}catch(e){}
+      blobs.forEach(function(u){URL.revokeObjectURL(u)});blobs=[];
+      q('.dokus').innerHTML='';offen.hidden=true;knopf.hidden=false;form.hidden=true;feld.value='';
+    }
+    knopf.onclick=function(){form.hidden=!form.hidden;if(!form.hidden)feld.focus()};
+    form.addEventListener('submit',function(e){
+      e.preventDefault();var pw=feld.value;if(!pw)return;
+      los.disabled=true;los.textContent='…';hinweis.hidden=true;
+      ausPasswort(pw).then(function(key){return oeffnen(key).then(function(){return merken(key)})})
+        .catch(function(){hinweis.textContent='Das Passwort stimmt nicht.';hinweis.hidden=false})
+        .then(function(){los.disabled=false;los.textContent='Öffnen'});
     });
-  }
-  function merken(key){return crypto.subtle.exportKey('raw',key).then(function(raw){
-    try{localStorage.setItem(SPEICHER,JSON.stringify({k:b64e(raw),bis:Date.now()+TAGE*864e5}))}catch(e){}})}
-  function sperren(){
-    try{localStorage.removeItem(SPEICHER)}catch(e){}
-    blobs.forEach(function(u){URL.revokeObjectURL(u)});blobs=[];
-    $('dokus').innerHTML='';$('offen').hidden=true;$('schlossBtn').hidden=false;$('pwForm').hidden=true;$('pw').value='';
-    $('schlossBtn').setAttribute('aria-expanded','false');
-  }
-  $('schlossBtn').onclick=function(){var zu=$('pwForm').hidden;$('pwForm').hidden=!zu;this.setAttribute('aria-expanded',String(zu));if(zu)$('pw').focus()};
-  $('pwForm').addEventListener('submit',function(e){
-    e.preventDefault();var pw=$('pw').value;if(!pw)return;
-    $('pwBtn').disabled=true;$('pwBtn').textContent='…';$('pwHinweis').hidden=true;
-    ausPasswort(pw).then(function(key){return oeffnen(key).then(function(){return merken(key)})})
-      .catch(function(){$('pwHinweis').textContent='Das Passwort stimmt nicht.';$('pwHinweis').hidden=false})
-      .then(function(){$('pwBtn').disabled=false;$('pwBtn').textContent='Öffnen'});
+    q('.sperren').onclick=sperren;
+    try{
+      var g=JSON.parse(localStorage.getItem(speicher)||'null');
+      if(g&&g.bis>Date.now())crypto.subtle.importKey('raw',b64d(g.k),{name:'AES-GCM'},false,['decrypt']).then(oeffnen).catch(sperren);
+      else if(g)localStorage.removeItem(speicher);
+    }catch(e){}
   });
-  $('sperrBtn').onclick=sperren;
-  try{
-    var g=JSON.parse(localStorage.getItem(SPEICHER)||'null');
-    if(g&&g.bis>Date.now()){
-      crypto.subtle.importKey('raw',b64d(g.k),{name:'AES-GCM'},false,['decrypt']).then(oeffnen).catch(sperren);
-    }else if(g)localStorage.removeItem(SPEICHER);
-  }catch(e){}
+  try{localStorage.removeItem('tresor-v1')}catch(e){}
 })();
 </script>
 </body>
